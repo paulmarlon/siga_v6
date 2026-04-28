@@ -1,0 +1,69 @@
+=============================================================================
+ESTRATEGIA DE IMPLEMENTACIÓN: PENSUM (MALLA CURRICULAR) - SIG@ V6.2
+=============================================================================
+
+1. FILOSOFÍA DE LA TABLA 'PENSUM' (ORQUESTADOR ACADÉMICO)
+-----------------------------------------------------------------------------
+La tabla 'pensum' es el punto de encuentro de cuatro ejes fundamentales:
+- Eje de Identidad: Carrera (¿A qué programa pertenece?)
+- Eje de Contenido: Materia (¿Qué se enseña?)
+- Eje de Tiempo: Grado/Semestre (¿Cuándo se enseña?)
+- Eje de Procedencia (NUEVO): Ciclo (¿Es base de 1-2 o especialidad de 3-8?)
+
+REGLA DE ORO V6.2:
+Al incluir 'grado_id', el sistema hereda la validación de 'ciclo'. Esto 
+garantiza que si una carrera es "Hija" (Especialidad), las materias de sus
+primeros grados se lean directamente de la "Carrera Padre" (Base) sin 
+duplicar registros en la DB.
+
+2. ESTRATEGIA DE VISTAS (UI/UX) - DISEÑO DINÁMICO
+-----------------------------------------------------------------------------
+A. Vista de Matriz (Malla Curricular):
+   - Ruta: admin.carreras.mallas
+   - Diseño: Columnas verticales por Grado.
+   - BLOQUEO DE CICLO: Si la carrera tiene una 'carrera_base_id', los grados 
+     de Ciclo 1 (1er y 2do sem) aparecen como "Solo Lectura", mostrando las
+     materias heredadas del Tronco Común.
+
+B. Interacción Drag & Drop (Livewire/SortableJS):
+   - Uso: Mover materias entre columnas de Ciclo 2 (3er a 8vo sem).
+   - Guardado: Petición AJAX/Livewire al evento 'onDrop' para actualizar 
+     'grado_id'.
+   - RESTRICCIÓN: No se permite arrastrar materias hacia o desde columnas 
+     bloqueadas por herencia.
+
+C. Buscador Global y "Catálogo Espejo":
+   - Panel lateral con materias disponibles.
+   - Filtro inteligente: Solo permite asignar materias marcadas como 
+     'es_comun' o pertenecientes al nivel de la carrera.
+
+3. RELACIONES Y LÓGICA DE NEGOCIO (BACKEND LARAVEL)
+-----------------------------------------------------------------------------
+- Validación de Nivel: 
+  IF (carrera->nivel_id == grado->nivel_id) THEN "Permitir" 
+  ELSE "Error: Nivel académico incompatible (Ej: No puedes poner materia de 
+  Técnico en una Licenciatura)".
+
+- Scope de Herencia (El Secreto del SIG@):
+  Al consultar el Pensum de una carrera hija, el Query debe ser:
+  WHERE carrera_id = [ID_HIJA] OR carrera_id = [ID_PADRE_BASE]
+
+- Evitar Duplicidad: 
+  Validación UNIQUE compuesta entre [carrera_id, materia_id, grado_id].
+
+4. REFERENCIA DE GESTIÓN PROFESIONAL
+-----------------------------------------------------------------------------
+1. Configuración de Malla: Se define el "deber ser" (Tabla Pensum).
+2. Congelamiento: Una vez que la malla tiene inscritos, se marca como 
+   VIGENTE y el Drag & Drop se bloquea para ese periodo.
+3. Oferta Académica: Se genera cada semestre usando la Malla como molde, 
+   clonando la estructura hacia 'oferta_academica' para que el cambio en 
+   la malla futura no rompa el pasado de los alumnos antiguos.
+
+=============================================================================
+ACCIONES INMEDIATAS (CHECKLIST DE PAUL):
+[ ] 1. Migración 'pensum': Verificar que apunte a las tablas corregidas.
+[ ] 2. Modelo 'Pensum': Definir belongsTo (Carrera, Materia, Grado).
+[ ] 3. Modelo 'Carrera': Definir belongsTo(Carrera::class, 'carrera_base_id').
+[ ] 4. Vista Blade: Crear el loop de columnas filtrando por Ciclo 1 y 2.
+=============================================================================

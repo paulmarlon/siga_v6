@@ -1,0 +1,251 @@
+// ==========================================
+// PROYECTO: SIG@ V5.4 - CANONICAL SINGULAR
+// ESTRATEGIA: TRONCO COMÚN & HISTORIAL ACADÉMICO
+// ESTADO: 100% ESTABLE - LISTO PARA SCHEMAS
+// ==========================================
+
+// --- BLOQUE 0: GOBERNANZA ---
+Table estado {
+  id int [pk, increment]
+  nombre varchar [note: 'ACTIVO, SUSPENDIDO, BAJA, EGRESADO, ANULADO']
+  slug varchar [unique]
+  permite_login boolean [default: true]
+  permite_procesos_academicos boolean [default: true]
+  color_hex varchar
+}
+
+// --- BLOQUE 1: CATÁLOGOS BASE ---
+Table gestion {
+  id int [pk, increment]
+  nombre varchar(4) [unique]
+  estado_id int [ref: > estado.id]
+}
+
+Table nivel {
+  id int [pk, increment]
+  nombre varchar [note: 'Pregrado, Posgrado, Técnico']
+}
+
+Table turno {
+  id int [pk, increment]
+  nombre varchar
+}
+
+// --- BLOQUE 2: INFRAESTRUCTURA E IDENTIDAD ---
+Table configuracion {
+  id int [pk, increment]
+  nombre_institucion varchar
+  sigla_institucion varchar
+  nit varchar
+  direccion text
+  telefono varchar
+  email_contacto varchar
+  web varchar
+  logo_path varchar
+  divisa varchar [default: 'BOB']
+  gestion_actual_id int [ref: > gestion.id]
+}
+
+Table user {
+  id int [pk, increment]
+  name varchar
+  email varchar [unique]
+  password varchar
+  estado_id int [ref: > estado.id]
+  remember_token varchar
+  created_at timestamp
+}
+
+// --- BLOQUE 3: ESTRUCTURA ACADÉMICA ---
+Table periodo {
+  id int [pk, increment]
+  nombre varchar
+  gestion_id int [ref: > gestion.id]
+  fecha_inicio date
+  fecha_fin date
+  estado_id int [ref: > estado.id]
+}
+
+Table carrera {
+  id int [pk, increment]
+  nombre varchar
+  sigla varchar [unique]
+  resolucion_ministerial varchar
+  duracion_periodos int
+  titulo_otorgado varchar
+  nivel_id int [ref: > nivel.id]
+  es_tronco_comun boolean [default: false]
+  estado_id int [ref: > estado.id]
+}
+
+Table materia {
+  id int [pk, increment]
+  sigla varchar [unique]
+  nombre varchar
+  es_comun boolean [default: false]
+  horas_academicas int
+  tipo_materia varchar
+  estado_id int [ref: > estado.id]
+}
+
+Table grado {
+  id int [pk, increment]
+  nombre varchar
+  orden int
+  nivel_id int [ref: > nivel.id]
+}
+
+Table paralelo {
+  id int [pk, increment]
+  nombre varchar
+  grado_id int [ref: > grado.id]
+}
+
+Table pensum {
+  id int [pk, increment]
+  carrera_id int [ref: > carrera.id]
+  materia_id int [ref: > materia.id]
+  grado_id int [ref: > grado.id]
+  obligatoria boolean [default: true]
+  estado_id int [ref: > estado.id]
+}
+
+// --- BLOQUE 4: ACTORES Y RELACIONES ---
+Table ppff {
+  id int [pk, increment]
+  nombres varchar
+  ap_paterno varchar
+  ap_materno varchar
+  ci varchar [unique]
+  parentesco varchar
+  celular varchar
+}
+
+Table estudiante {
+  id int [pk, increment]
+  usuario_id int [ref: > user.id]
+  ppff_id int [ref: > ppff.id, null]
+  registro_historico varchar [unique]
+  nombres varchar
+  ap_paterno varchar
+  ap_materno varchar
+  ci varchar [unique]
+  sexo char(1)
+  fecha_nacimiento date
+  direccion_domicilio varchar
+  celular varchar
+  foto varchar
+  estado_id int [ref: > estado.id]
+}
+
+Table inscripcion_carrera {
+  id int [pk, increment]
+  estudiante_id int [ref: > estudiante.id]
+  carrera_id int [ref: > carrera.id]
+  gestion_inscripcion_id int [ref: > gestion.id]
+  fecha_inscripcion date
+  es_especialidad_activa boolean [default: true]
+  estado_id int [ref: > estado.id]
+}
+
+Table personal {
+  id int [pk, increment]
+  usuario_id int [ref: > user.id]
+  tipo "enum('docente','administrativo')"
+  nombres varchar
+  ap_paterno varchar
+  ap_materno varchar
+  ci varchar [unique]
+  fecha_nacimiento date
+  direccion varchar
+  celular varchar
+  profesion varchar
+  foto varchar
+  estado_id int [ref: > estado.id]
+}
+
+Table formacion {
+  id int [pk, increment]
+  personal_id int [ref: > personal.id]
+  titulo varchar
+  institucion varchar
+  nivel varchar
+  fecha_graduacion date
+  archivo_path varchar
+}
+
+// --- BLOQUE 5: OPERATIVA Y EVALUACIÓN ---
+Table oferta_academica {
+  id int [pk, increment]
+  periodo_id int [ref: > periodo.id]
+  paralelo_id int [ref: > paralelo.id]
+  turno_id int [ref: > turno.id]
+  pensum_id int [ref: > pensum.id]
+  docente_id int [ref: > personal.id]
+  cupo_maximo int [default: 80]
+  estado_id int [ref: > estado.id]
+}
+
+Table matriculacion {
+  id int [pk, increment]
+  estudiante_id int [ref: > estudiante.id]
+  oferta_id int [ref: > oferta_academica.id]
+  fecha_inscripcion timestamp [default: `now()`]
+  costo_matricula decimal(10,2)
+  estado_id int [ref: > estado.id]
+  observaciones text
+}
+
+Table programacion_examen {
+  id int [pk, increment]
+  oferta_id int [ref: > oferta_academica.id]
+  instancia varchar [note: 'P1, P2, EF, 2T, RJ']
+  modalidad "enum('Ciega','Directa_Docente','Dictada_Administrativo','Otras')"
+  tipo_proceso varchar [default: 'Ordinario']
+  tipo_contenido varchar
+  fecha_programada datetime
+  responsable_id int [ref: > personal.id]
+  bloqueado boolean [default: false]
+  observaciones_legales text
+}
+
+Table folio_examen {
+  id int [pk, increment]
+  programacion_id int [ref: > programacion_examen.id]
+  codigo_folio varchar [unique]
+  estudiante_id int [ref: > estudiante.id]
+  estado_folio varchar [default: 'Entregado']
+}
+
+Table calificacion {
+  id int [pk, increment]
+  matriculacion_id int [ref: > matriculacion.id]
+  programacion_id int [ref: > programacion_examen.id]
+  folio_id int [ref: > folio_examen.id, null]
+  tp_raw float [default: 0]
+  tp_sellado boolean [default: false]
+  tp_observacion varchar
+  exam_raw float [default: 0]
+  exam_sellado boolean [default: false]
+  exam_observacion varchar
+  registrado_por_id int [ref: > user.id]
+  nota_definitiva float
+  estado_aprobacion varchar
+  log_auditoria json
+  created_at timestamp
+  updated_at timestamp
+}
+
+// --- BLOQUE 6: AUDITORÍA ---
+Table auditoria {
+  id int [pk, increment]
+  user_id int [ref: > user.id]
+  auditable_id int
+  auditable_type varchar
+  accion varchar
+  valores_anteriores json
+  valores_nuevos json
+  ip_address varchar(45)
+  user_agent text
+  created_at timestamp [default: `now()`]
+}
