@@ -15,6 +15,7 @@ class Materia extends Model
     protected $fillable = [
         'sigla',
         'nombre',
+        'descripcion',
         'horas_academicas',
         'tipo_materia',
         'es_comun',

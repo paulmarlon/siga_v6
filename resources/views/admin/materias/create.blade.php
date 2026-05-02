@@ -27,104 +27,135 @@
                     @csrf
                     <div class="card-body">
                         <div class="row">
-                            {{-- Columna Izquierda: Identificación --}}
-                            <div class="col-md-6">
-                                {{-- Sigla --}}
-                                <div class="form-group">
-                                    <label for="sigla">Sigla / Código <span class="text-danger">*</span></label>
-                                    <div class="input-group">
-                                        <div class="input-group-prepend">
-                                            <span class="input-group-text bg-white"><i class="fas fa-barcode"></i></span>
+                            {{-- SECCIÓN IZQUIERDA: IDENTIFICACIÓN --}}
+                            <div class="col-md-7">
+                                <div class="row">
+                                    {{-- Sigla --}}
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="sigla">Sigla <span class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <span class="input-group-text bg-light"><i
+                                                            class="fas fa-fingerprint text-primary"></i></span>
+                                                </div>
+                                                <input type="text" name="sigla" id="sigla"
+                                                    class="form-control btn-flat font-weight-bold @error('sigla') is-invalid @enderror"
+                                                    value="{{ old('sigla') }}" placeholder="INF-101" required
+                                                    maxlength="20" style="text-transform: uppercase;">
+                                            </div>
+                                            @error('sigla')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
                                         </div>
-                                        <input type="text" name="sigla" id="sigla"
-                                            class="form-control btn-flat @error('sigla') is-invalid @enderror"
-                                            value="{{ old('sigla') }}" placeholder="Ej: MAT-101" required maxlength="20"
-                                            style="text-transform: uppercase; font-weight: 700;">
-                                        @error('sigla')
-                                            <span class="invalid-feedback">{{ $message }}</span>
-                                        @enderror
                                     </div>
-                                </div>
 
-                                {{-- Nombre --}}
-                                <div class="form-group">
-                                    <label for="nombre">Nombre de la Materia <span class="text-danger">*</span></label>
-                                    <input type="text" name="nombre" id="nombre"
-                                        class="form-control btn-flat @error('nombre') is-invalid @enderror"
-                                        value="{{ old('nombre') }}" placeholder="Ej: ÁLGEBRA LINEAL" required
-                                        style="text-transform: uppercase;">
-                                    @error('nombre')
-                                        <span class="invalid-feedback">{{ $message }}</span>
-                                    @enderror
+                                    {{-- Nombre --}}
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label for="nombre">Nombre de la Materia <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" name="nombre" id="nombre"
+                                                class="form-control btn-flat @error('nombre') is-invalid @enderror"
+                                                value="{{ old('nombre') }}" placeholder="EJ: ESTRUCTURA DE DATOS" required
+                                                style="text-transform: uppercase;">
+                                            @error('nombre')
+                                                <small class="text-danger">{{ $message }}</small>
+                                            @enderror
+                                        </div>
+                                    </div>
+
+                                    {{-- Descripción (Basado en tu Schema) --}}
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="descripcion">Descripción / Resumen <span
+                                                    class="text-muted small">(Opcional)</span></label>
+                                            <textarea name="descripcion" id="descripcion" class="form-control btn-flat @error('descripcion') is-invalid @enderror"
+                                                rows="3" maxlength="255" placeholder="Breve descripción de la materia..."
+                                                style="resize: none; border-left: 3px solid #003366;">{{ old('descripcion') }}</textarea>
+                                            <div class="d-flex justify-content-between">
+                                                @error('descripcion')
+                                                    <small class="text-danger">{{ $message }}</small>
+                                                @enderror
+                                                <small class="text-muted ml-auto"><span id="char-count">0</span>/255</small>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {{-- Columna Derecha: Configuración --}}
-                            <div class="col-md-6">
-                                <div class="row">
-                                    {{-- Horas Académicas --}}
-                                    <div class="col-md-6 form-group">
-                                        <label for="horas_academicas">Horas Académicas <span
-                                                class="text-danger">*</span></label>
-                                        <input type="number" name="horas_academicas" id="horas_academicas"
-                                            class="form-control btn-flat @error('horas_academicas') is-invalid @enderror"
-                                            value="{{ old('horas_academicas', 80) }}" min="1" required>
-                                        @error('horas_academicas')
-                                            <span class="invalid-feedback">{{ $message }}</span>
-                                        @enderror
+                            {{-- SECCIÓN DERECHA: CONFIGURACIÓN Y ESTADO --}}
+                            <div class="col-md-5 border-left">
+                                <div class="pl-3">
+                                    <div class="row">
+                                        {{-- Horas --}}
+                                        <div class="col-md-6 form-group">
+                                            <label for="horas_academicas">Horas Acad. <span
+                                                    class="text-danger">*</span></label>
+                                            <div class="input-group">
+                                                <input type="number" name="horas_academicas" id="horas_academicas"
+                                                    class="form-control btn-flat @error('horas_academicas') is-invalid @enderror"
+                                                    value="{{ old('horas_academicas', 80) }}" min="1" required>
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text bg-white"><i
+                                                            class="fas fa-clock text-warning"></i></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Tipo --}}
+                                        <div class="col-md-6 form-group">
+                                            <label for="tipo_materia">Tipo <span class="text-danger">*</span></label>
+                                            <select name="tipo_materia" id="tipo_materia"
+                                                class="form-control btn-flat select2" required>
+                                                @foreach ($tipos as $tipo)
+                                                    <option value="{{ $tipo }}"
+                                                        {{ old('tipo_materia') == $tipo ? 'selected' : '' }}>
+                                                        {{ $tipo }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    {{-- Tipo de Materia --}}
-                                    <div class="col-md-6 form-group">
-                                        <label for="tipo_materia">Tipo de Materia <span class="text-danger">*</span></label>
-                                        <select name="tipo_materia" id="tipo_materia" class="form-control btn-flat"
+                                    <div class="form-group mt-2">
+                                        <label for="estado_id">Estado Inicial</label>
+                                        <select name="estado_id" id="estado_id" class="form-control btn-flat border-info"
                                             required>
-                                            @foreach ($tipos as $tipo)
-                                                <option value="{{ $tipo }}"
-                                                    {{ old('tipo_materia') == $tipo ? 'selected' : '' }}>
-                                                    {{ $tipo }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="row">
-                                    {{-- Estado (Global) --}}
-                                    <div class="col-md-6 form-group">
-                                        <label for="estado_id">Estado Inicial <span class="text-danger">*</span></label>
-                                        <select name="estado_id" id="estado_id" class="form-control btn-flat" required>
                                             @foreach ($estados as $estado)
                                                 <option value="{{ $estado->id }}"
                                                     {{ old('estado_id') == $estado->id ? 'selected' : '' }}>
-                                                    {{ $estado->nombre }}
+                                                    ● {{ $estado->nombre }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
 
-                                    {{-- Tronco Común --}}
-                                    <div class="col-md-6 form-group d-flex align-items-center pt-4">
+                                    <div class="form-group mt-4 p-3 bg-light border">
                                         <div
                                             class="custom-control custom-switch custom-switch-off-danger custom-switch-on-success">
                                             <input type="checkbox" class="custom-control-input" id="es_comun"
                                                 name="es_comun" value="1" {{ old('es_comun') ? 'checked' : '' }}>
-                                            <label class="custom-control-label" for="es_comun"
-                                                style="font-size: 0.8rem; padding-top: 2px;">¿ES MATERIA COMÚN?</label>
+                                            <label class="custom-control-label" for="es_comun">
+                                                <strong class="text-uppercase" style="font-size: 0.85rem;">¿Es Materia de
+                                                    Tronco Común?</strong>
+                                            </label>
                                         </div>
+                                        <p class="text-muted mb-0 small mt-1">Si se activa, la materia será compartida
+                                            entre diferentes menciones o carreras.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="card-footer bg-light border-top py-3 text-right">
-                        <button type="reset" class="btn btn-sm btn-flat btn-default border mr-2">
-                            <i class="fas fa-eraser mr-1"></i> LIMPIAR
+                    <div class="card-footer bg-white border-top py-3 text-right">
+                        <button type="reset" class="btn btn-sm btn-flat btn-outline-secondary mr-2 px-3">
+                            <i class="fas fa-undo mr-1"></i> REINICIAR
                         </button>
-                        <button type="submit" class="btn btn-sm btn-flat btn-primary px-4 shadow-sm"
+                        <button type="submit" class="btn btn-sm btn-flat btn-primary px-5 shadow"
                             style="background-color: #003366; border-color: #003366;">
-                            <i class="fas fa-save mr-1"></i> REGISTRAR MATERIA
+                            <i class="fas fa-save mr-1"></i> GUARDAR MATERIA
                         </button>
                     </div>
                 </form>

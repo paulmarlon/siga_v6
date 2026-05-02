@@ -27,15 +27,18 @@ class MateriaController extends Controller
         }
 
         // 4. Filtro: Búsqueda por Sigla (Para el buscador avanzado)
-        if ($request->filled('sigla')) {
-            $query->where('sigla', 'like', '%' . $request->sigla . '%');
+        if ($request->filled('buscar')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('sigla', 'like', '%' . $request->buscar . '%')
+                    ->orWhere('nombre', 'like', '%' . $request->buscar . '%');
+            });
         }
 
         // 5. Ejecutar la consulta
-        $materias = $query->orderBy('sigla', 'asc')->get();
+        $materias = $query->orderBy('id', 'asc')->get();
 
         // Necesitamos los estados para los modales o filtros rápidos en la vista
-        $estados = Estado::all();
+        $estados = Estado::orderBy('nombre', 'asc')->get();
 
         return view('admin.materias.index', compact('materias', 'estados'));
     }
@@ -56,33 +59,39 @@ class MateriaController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Validación rigurosa
+        // 1. Validación (Ajustada a tu nota de Teorica, Tecnica, Laboratorio)
         $request->validate([
             'sigla' => 'required|unique:materias,sigla|max:20',
             'nombre' => 'required|string|max:100',
+            'descripcion' => 'nullable|string|max:255',
             'horas_academicas' => 'required|integer|min:1',
-            'tipo_materia' => 'required|in:Teorica,Tecnica,Laboratorio',
+            'tipo_materia' => 'required|in:Teorica,Practica,Teorica-Practica',
             'estado_id' => 'required|exists:estados,id',
             'es_comun' => 'nullable|boolean'
         ]);
 
         try {
-            // 2. Creación del registro
+            // 2. Creación con los datos procesados
             Materia::create([
-                'sigla' => strtoupper($request->sigla), // Forzamos mayúsculas en la sigla
-                'nombre' => strtoupper($request->nombre), // Consistencia visual en el catálogo
+                'sigla'            => strtoupper($request->sigla),
+                'nombre'           => strtoupper($request->nombre),
+                'descripcion'      => $request->descripcion, // <-- Faltaba este campo
                 'horas_academicas' => $request->horas_academicas,
-                'tipo_materia' => $request->tipo_materia,
-                'es_comun' => $request->has('es_comun') ? true : false,
-                'estado_id' => $request->estado_id,
+                'tipo_materia'     => $request->tipo_materia,
+                // Forma más limpia de Laravel para capturar el switch
+                'es_comun'         => $request->boolean('es_comun'),
+                'estado_id'        => $request->estado_id,
             ]);
 
             return redirect()->route('admin.materias.index')
-                ->with('success', 'La materia se registró correctamente en el catálogo.');
+                ->with('mensaje', 'Materia registrada con éxito.') // Cambié a 'mensaje' para ser genérico
+                ->with('icono', 'success'); // Estilo AdminLTE
+
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Hubo un error al registrar la materia: ' . $e->getMessage())
-                ->withInput(); // Mantiene los datos que el usuario ya escribió
+                ->with('mensaje', 'Error: ' . $e->getMessage())
+                ->with('icono', 'error')
+                ->withInput();
         }
     }
 
@@ -110,12 +119,13 @@ class MateriaController extends Controller
 
     public function update(Request $request, Materia $materia)
     {
-        // 1. Validación (Exceptuando el ID actual para la sigla única)
+        // 1. Validación (Incluimos descripción y corregimos los tipos según tu migración)
         $request->validate([
             'sigla' => "required|max:20|unique:materias,sigla,{$materia->id}",
             'nombre' => 'required|string|max:100',
+            'descripcion' => 'nullable|string|max:255', // Validamos el nuevo campo
             'horas_academicas' => 'required|integer|min:1',
-            'tipo_materia' => 'required|in:Teorica,Practica,Teorica-Practica',
+            'tipo_materia' => 'required|in:Teorica,Practica,Teorica-Practica', // Ajustado a tus opciones
             'estado_id' => 'required|exists:estados,id',
             'es_comun' => 'nullable|boolean'
         ]);
@@ -123,19 +133,22 @@ class MateriaController extends Controller
         try {
             // 2. Actualización de datos
             $materia->update([
-                'sigla' => strtoupper($request->sigla),
-                'nombre' => strtoupper($request->nombre),
+                'sigla'            => strtoupper($request->sigla),
+                'nombre'           => strtoupper($request->nombre),
+                'descripcion'      => $request->descripcion, // <-- Guardamos la descripción
                 'horas_academicas' => $request->horas_academicas,
-                'tipo_materia' => $request->tipo_materia,
-                'es_comun' => $request->has('es_comun') ? true : false,
-                'estado_id' => $request->estado_id,
+                'tipo_materia'     => $request->tipo_materia,
+                'es_comun'         => $request->boolean('es_comun'), // Más limpio para switches
+                'estado_id'        => $request->estado_id,
             ]);
 
             return redirect()->route('admin.materias.index')
-                ->with('success', "La materia [{$materia->sigla}] fue actualizada con éxito.");
+                ->with('mensaje', "La materia [{$materia->sigla}] fue actualizada con éxito.")
+                ->with('icono', 'success');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Error al actualizar: ' . $e->getMessage())
+                ->with('mensaje', 'Error al actualizar: ' . $e->getMessage())
+                ->with('icono', 'error')
                 ->withInput();
         }
     }

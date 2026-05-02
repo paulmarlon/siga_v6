@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('sigla', 20)->unique();
             $table->string('nombre', 100);
+            $table->string('descripcion', 255)->nullable();
             $table->integer('horas_academicas');
 
             // Usamos string para que coincida con tu nota: Teorica, Tecnica, Laboratorio

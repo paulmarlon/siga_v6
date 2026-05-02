@@ -32,8 +32,7 @@ return new class extends Migration
             // Configuración de la materia en este pensum
             $table->boolean('es_obligatoria')->default(true);
 
-            // Horas académicas (Opcional, pero útil para mallas)
-            $table->integer('horas_semanales')->default(0);
+
 
             // Control de Estado y Auditoría
             $table->foreignId('estado_id')->default(1)->constrained('estados');

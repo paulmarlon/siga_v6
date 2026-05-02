@@ -1,12 +1,12 @@
 // =============================================================================
-// PROYECTO: SIG@ V6.2 - ARQUITECTURA MAESTRA REORDENADA (SECUENCIAL)
+// PROYECTO: SIG@ V6.2 - ARQUITECTURA MAESTRA REORDENADA
 // ESTRATEGIA: ORDEN DE MIGRACIÓN POR DEPENDENCIAS (FK)
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-// NIVEL 1: CATÁLOGOS E INFRAESTRUCTURA (SIN DEPENDENCIAS EXTERNAS)
+// NIVEL 1: CATÁLOGOS BASE E INFRAESTRUCTURA INDEPENDIENTE
 // -----------------------------------------------------------------------------
-
+//REALIZADO
 Table direccion {
   id int [pk, increment]
   pais varchar [default: 'Bolivia']
@@ -16,6 +16,7 @@ Table direccion {
   Note: 'VISTA: @include("admin.partials.modals._direccion") | ESTRATEGIA: Modal dinámico.'
 }
 
+//REALIZADO
 Table estado {
   id int [pk, increment]
   nombre varchar [unique]
@@ -26,24 +27,62 @@ Table estado {
   Note: 'VISTA: admin.estados.index | ESTRATEGIA: DataTable con Badges.'
 }
 
+Table user {
+  id int [pk, increment]
+  persona_id int [ref: > persona.id, unique]
+  estado_id int [ref: > estado.id]
+  email varchar [unique]
+  password varchar
+  remember_token varchar
+  created_at timestamp
+  Note: 'VISTA: admin.users.index'
+}
+
+
+//REALIZADO
 Table nivel {
   id int [pk, increment]
   nombre varchar [note: 'Pregrado, Posgrado, Técnico']
   Note: 'VISTA: admin.catalogos.index | ESTRATEGIA: Modal simple.'
 }
 
+//REALIZADO
 Table turno {
   id int [pk, increment]
   nombre varchar
   Note: 'VISTA: admin.catalogos.index | ESTRATEGIA: Modal simple.'
 }
 
+//REALIZADO
 Table paralelo {
   id int [pk, increment]
   nombre varchar
   Note: 'VISTA: admin.paralelos.index | ESTRATEGIA: Modal (ACTIVO por defecto).'
 }
 
+// -----------------------------------------------------------------------------
+// NIVEL 2: ENTIDADES DE CONFIGURACIÓN Y PERSONAS (DEPENDE DE NIVEL 1)
+// -----------------------------------------------------------------------------
+//REALIZADO
+Table gestion {
+  id int [pk, increment]
+  nombre varchar(4) [unique]
+  estado_id int [ref: > estado.id]
+  Note: 'VISTA: admin.gestiones.index'
+}
+
+//REALIZADO
+Table periodo {
+  id int [pk, increment]
+  nombre varchar
+  gestion_id int [ref: > gestion.id]
+  fecha_inicio date
+  fecha_fin date
+  estado_id int [ref: > estado.id]
+  Note: 'VISTA: admin.periodos.index'
+}
+
+//REALIZADO
 Table materia {
   id int [pk, increment]
   sigla varchar [unique]
@@ -55,24 +94,7 @@ Table materia {
   Note: 'VISTA: admin.materias.index'
 }
 
-
-Table gestion {
-  id int [pk, increment]
-  nombre varchar(4) [unique]
-  estado_id int [ref: > estado.id]
-  Note: 'VISTA: admin.gestiones.index'
-}
-
-Table periodo {
-  id int [pk, increment]
-  nombre varchar
-  gestion_id int [ref: > gestion.id]
-  fecha_inicio date
-  fecha_fin date
-  estado_id int [ref: > estado.id]
-  Note: 'VISTA: admin.periodos.index'
-}
-
+//REALIZADO
 Table grado {
   id int [pk, increment]
   nombre varchar
@@ -83,6 +105,7 @@ Table grado {
   Note: 'VISTA: admin.grados.index'
 }
 
+//REALIZADO
 Table configuracion {
   id int [pk, increment]
   nombre_institucion varchar
@@ -98,6 +121,7 @@ Table configuracion {
   Note: 'VISTA: admin.configuracion.edit'
 }
 
+//REALIZADO
 Table persona {
   id int [pk, increment]
   ci varchar [unique]
@@ -113,27 +137,20 @@ Table persona {
   Note: 'VISTA: admin.personas.create/edit | ESTRATEGIA: Full Page.'
 }
 
+//REALIZADO
+
 Table ppff {
   id int [pk, increment]
-  persona_id int [ref: > persona.id]
-  parentesco varchar
-  Note: 'VISTA: @include("admin.estudiantes._form_ppff")'
+  persona_id int [ref: > persona.id, unique, note: 'Relación 1:1 con la tabla persona']
+  parentesco enum('Padre', 'Madre', 'Tutor', 'Apoderado') [note: 'Valores fijos para integridad de datos']
+
+  Note: 'VISTA: @include("admin.estudiantes._form_ppff") | ESTRATEGIA: Registro opcional en el alta del estudiante.'
 }
 
 // -----------------------------------------------------------------------------
-// NIVEL 3: USUARIOS Y PERSONAL (VÍNCULOS DE IDENTIDAD)
+// NIVEL 3: SEGURIDAD, USUARIOS Y RECURSOS HUMANOS (DEPENDE DE NIVEL 2)
 // -----------------------------------------------------------------------------
-
-Table user {
-  id int [pk, increment]
-  persona_id int [ref: > persona.id, unique]
-  estado_id int [ref: > estado.id]
-  email varchar [unique]
-  password varchar
-  remember_token varchar
-  created_at timestamp
-  Note: 'VISTA: admin.users.index'
-}
+//REALIZADO
 
 Table personal {
   id int [pk, increment]
@@ -157,9 +174,9 @@ Table formacion {
 }
 
 // -----------------------------------------------------------------------------
-// NIVEL 4: ESTRUCTURA ACADÉMICA Y MATRÍCULA
+// NIVEL 4: CARRERAS, MALLAS ACADÉMICAS Y ESTUDIANTES (DEPENDE DE NIVELES 1-3)
 // -----------------------------------------------------------------------------
-
+//REALIZADO
 Table carrera {
   id int [pk, increment]
   carrera_base_id int [ref: > carrera.id, null]
@@ -174,6 +191,7 @@ Table carrera {
   Note: 'VISTA: admin.carreras.edit'
 }
 
+//REALIZADO
 Table pensum {
   id int [pk, increment]
   carrera_id int [ref: > carrera.id]
@@ -184,13 +202,16 @@ Table pensum {
   Note: 'VISTA: admin.carreras.mallas'
 }
 
+//REALIZADO
+
 Table estudiante {
   id int [pk, increment]
-  persona_id int [ref: > persona.id]
-  ppff_id int [ref: > ppff.id, null]
+  persona_id int [ref: > persona.id, unique]
+  ppff_id int [ref: > ppff.id, null, note: 'Opcional para mayores de edad']
   registro_historico varchar [unique]
   estado_id int [ref: > estado.id]
-  Note: 'VISTA: admin.estudiantes.show'
+
+  Note: 'VISTA: admin.estudiantes.show | El ppff_id se genera antes que el estudiante si el tutor es nuevo.'
 }
 
 Table inscripcion_carrera {
@@ -204,7 +225,7 @@ Table inscripcion_carrera {
 }
 
 // -----------------------------------------------------------------------------
-// NIVEL 5: OPERATIVA, CALIFICACIONES Y AUDITORÍA
+// NIVEL 5: GESTIÓN OPERATIVA Y EXÁMENES (DEPENDE DE NIVEL 4)
 // -----------------------------------------------------------------------------
 
 Table oferta_academica {
@@ -227,14 +248,6 @@ Table matriculacion_materia {
   estado_id int [ref: > estado.id]
 }
 
-Table asistencia {
-  id int [pk, increment]
-  matriculacion_id int [ref: > matriculacion_materia.id]
-  fecha date
-  estado_id int [ref: > estado.id]
-  observacion varchar
-}
-
 Table programacion_examen {
   id int [pk, increment]
   oferta_id int [ref: > oferta_academica.id]
@@ -245,6 +258,18 @@ Table programacion_examen {
   responsable_id int [ref: > personal.id]
   bloqueado boolean [default: false]
   observaciones_legales text
+}
+
+// -----------------------------------------------------------------------------
+// NIVEL 6: EVALUACIÓN, ASISTENCIA, TITULACIÓN Y AUDITORÍA (DEPENDE DE NIVEL 5)
+// -----------------------------------------------------------------------------
+
+Table asistencia {
+  id int [pk, increment]
+  matriculacion_id int [ref: > matriculacion_materia.id]
+  fecha date
+  estado_id int [ref: > estado.id]
+  observacion varchar
 }
 
 Table folio_examen {

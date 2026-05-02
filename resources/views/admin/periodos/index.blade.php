@@ -121,9 +121,10 @@
 @stop
 
 @section('js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(document).ready(function() {
-            // DataTable e idioma español (mantenemos tu configuración)
+            // 1. Configuración de DataTable
             const table = $('#periodos-table').DataTable({
                 responsive: true,
                 autoWidth: false,
@@ -150,7 +151,37 @@
                 }
             });
 
-            // Confirmación para ELIMINAR (Soft Delete)
+            // 2. Configuración de Toasts (Notificaciones rápidas)
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            // 3. Captura de mensajes del Controller (swal-success / swal-error)
+            @if (session('swal-success'))
+                Toast.fire({
+                    icon: 'success',
+                    title: "{{ session('swal-success') }}"
+                });
+            @endif
+
+            @if (session('swal-error'))
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Operación fallida',
+                    text: "{{ session('swal-error') }}",
+                    confirmButtonColor: '#003366',
+                });
+            @endif
+
+            // 4. Confirmación para ELIMINAR (Soft Delete)
             $('.form-eliminar').submit(function(e) {
                 e.preventDefault();
                 Swal.fire({
@@ -160,7 +191,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#003366',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, mover',
+                    confirmButtonText: '<i class="fas fa-trash-alt"></i> Sí, mover',
                     cancelButtonText: 'Cancelar',
                     reverseButtons: true
                 }).then((result) => {
@@ -170,7 +201,7 @@
                 });
             });
 
-            // Confirmación para RESTAURAR
+            // 5. Confirmación para RESTAURAR
             $('.form-restaurar').submit(function(e) {
                 e.preventDefault();
                 Swal.fire({
@@ -180,7 +211,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#17a2b8',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Sí, restaurar',
+                    confirmButtonText: '<i class="fas fa-check"></i> Sí, restaurar',
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
